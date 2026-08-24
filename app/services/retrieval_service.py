@@ -1,4 +1,7 @@
-from app.config.settings import TOP_K
+from app.config.settings import (
+    DISTANCE_THRESHOLD,
+    TOP_K,
+)
 from app.services.embedding_service import EmbeddingService
 from app.services.vector_service import VectorService
 
@@ -36,6 +39,9 @@ class RetrievalService:
             results["metadatas"][0],
             results["distances"][0],
         ):
+            if distance > DISTANCE_THRESHOLD:
+                continue
+
             retrieved_chunks.append(
                 {
                     "text": document,

@@ -15,3 +15,5 @@ CHUNK_SIZE = int(os.getenv("CHUNK_SIZE","800",))
 CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP","150",))
 
 TOP_K = int(os.getenv("TOP_K","3",))
+
+DISTANCE_THRESHOLD = float(os.getenv("DISTANCE_THRESHOLD", "1.0"))

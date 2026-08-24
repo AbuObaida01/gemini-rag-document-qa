@@ -16,6 +16,16 @@ query_service = QueryService()
 class QueryRequest(BaseModel):
     question: str
 
+class SourceResponse(BaseModel):
+    document: str
+    page: int
+    chunk: int
+    distance: float
+
+
+class QueryResponse(BaseModel):
+    answer: str
+    sources: list[SourceResponse]
 
 @router.post("/query")
 async def query_documents(
@@ -29,5 +39,11 @@ async def query_documents(
     except ValueError as exc:
         raise HTTPException(
             status_code=400,
+            detail=str(exc),
+        ) from exc
+
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=502,
             detail=str(exc),
         ) from exc

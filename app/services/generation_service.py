@@ -52,10 +52,15 @@ Question:
 {question}
 """
 
-        response = self.client.models.generate_content(
-            model=GENERATION_MODEL,
-            contents=prompt,
-        )
+        try:
+            response = self.client.models.generate_content(
+                model=GENERATION_MODEL,
+                contents=prompt,
+            )
+        except Exception as exc:
+            raise RuntimeError(
+                "Failed to generate an answer with Gemini."
+            ) from exc
 
         if not response.text:
             raise ValueError(
