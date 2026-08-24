@@ -23,6 +23,7 @@ async def upload_document(
             "message": "Document processed successfully",
             "document": file.filename,
             "pages_extracted": len(result["pages"]),
+            "chunks_created": len(result["chunks"]),
         }
 
     except ValueError as exc:

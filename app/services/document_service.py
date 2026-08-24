@@ -4,7 +4,7 @@ import pymupdf
 from fastapi import UploadFile
 
 from app.config.settings import UPLOAD_DIR
-
+from app.services.chunk_service import ChunkService
 
 ALLOWED_CONTENT_TYPES = {
     "application/pdf",
@@ -15,6 +15,7 @@ class DocumentService:
     def __init__(self) -> None:
         self.upload_dir = Path(UPLOAD_DIR)
         self.upload_dir.mkdir(parents=True, exist_ok=True)
+        self.chunk_service = ChunkService()
 
     def validate_file(self, file: UploadFile) -> None:
         if not file.filename:
@@ -89,9 +90,17 @@ class DocumentService:
 
         file_path = await self.save_file(file)
 
-        pages = self.extract_text(file_path)
+        try:
+            pages = self.extract_text(file_path)
+
+            chunks = self.chunk_service.chunk_pages(pages)
+
+        except Exception:
+            file_path.unlink(missing_ok=True)
+            raise
 
         return {
             "file_path": file_path,
             "pages": pages,
+            "chunks": chunks,
         }
