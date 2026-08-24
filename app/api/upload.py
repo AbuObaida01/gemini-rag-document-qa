@@ -1,24 +1,28 @@
 from fastapi import APIRouter, File, HTTPException, UploadFile
+
 from app.services.document_service import DocumentService
 
-router=APIRouter(
+
+router = APIRouter(
     prefix="/api/documents",
-    tags=["Documnets"],
+    tags=["Documents"],
 )
 
-document_service=DocumentService()
+
+document_service = DocumentService()
+
 
 @router.post("/upload")
 async def upload_document(
-    file:UploadFile=File(...),
+    file: UploadFile = File(...),
 ):
     try:
-        file_path = await document_service.process_upload(file)
+        result = await document_service.process_upload(file)
 
         return {
-            "message": "Document uploaded successfully",
+            "message": "Document processed successfully",
             "document": file.filename,
-            "path": str(file_path),
+            "pages_extracted": len(result["pages"]),
         }
 
     except ValueError as exc:
@@ -32,4 +36,3 @@ async def upload_document(
             status_code=409,
             detail=str(exc),
         ) from exc
-    
