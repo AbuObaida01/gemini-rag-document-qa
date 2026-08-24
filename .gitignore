@@ -1,16 +1,21 @@
+# Python
+venv/
 .venv/
 __pycache__/
-*.py[cod]
+*.pyc
 
+# Environment
 .env
 
-uploads/*
-chroma_db/*
+# ChromaDB
+chroma_db/
 
+# Uploaded files
+uploads/
+
+# Pytest
 .pytest_cache/
-.coverage
 
-.vscode/
-.idea/
-
-.DS_Store
+# Frontend
+frontend/node_modules/
+frontend/dist/
