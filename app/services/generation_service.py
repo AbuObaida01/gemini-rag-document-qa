@@ -3,10 +3,11 @@ from google import genai
 from app.config.settings import GEMINI_API_KEY
 
 
-GENERATION_MODEL = "gemini-3.6-flash"
+GENERATION_MODEL = "gemini-3.5-flash"
 
 
 class GenerationService:
+
     def __init__(self) -> None:
         if not GEMINI_API_KEY:
             raise ValueError(
@@ -22,6 +23,7 @@ class GenerationService:
         question: str,
         context: str,
     ) -> str:
+
         if not question.strip():
             raise ValueError(
                 "Question cannot be empty."
@@ -39,6 +41,7 @@ Answer the user's question using ONLY the information
 provided in the context below.
 
 If the answer cannot be found in the context, say:
+
 "I could not find the answer in the provided documents."
 
 Rules:
@@ -61,6 +64,11 @@ Question:
             )
 
         except Exception as exc:
+            print(
+                f"Gemini generation error: "
+                f"{type(exc).__name__}: {exc}"
+            )
+
             raise RuntimeError(
                 "Failed to generate an answer with Gemini."
             ) from exc
