@@ -37,3 +37,41 @@ async def upload_document(
             status_code=409,
             detail=str(exc),
         ) from exc
+
+@router.get("")
+async def list_documents():
+    return {
+        "documents": document_service.list_documents()
+    }
+
+@router.delete("/{document_name}")
+async def delete_document(
+    document_name: str,
+):
+    try:
+        document_service.delete_document(
+            document_name
+        )
+
+        return {
+            "message": "Document deleted successfully",
+            "document": document_name,
+        }
+
+    except FileNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        ) from exc
+
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=str(exc),
+        ) from exc

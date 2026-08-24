@@ -23,10 +23,19 @@ class DocumentService:
 
     def validate_file(self, file: UploadFile) -> None:
         if not file.filename:
-            raise ValueError("Filename is missing.")
+            raise ValueError(
+                "Filename is missing."
+            )
 
-        if file.content_type not in ALLOWED_CONTENT_TYPES:
-            raise ValueError("Only PDF files are supported.")
+        if not file.filename.lower().endswith(".pdf"):
+            raise ValueError(
+                "Only PDF files are supported."
+            )
+
+        if file.content_type != "application/pdf":
+            raise ValueError(
+                "Only PDF files are supported."
+            )
 
     def check_duplicate(self, filename: str) -> None:
         file_path = self.upload_dir / filename
@@ -121,3 +130,50 @@ class DocumentService:
             "chunks": chunks,
             "chunks_stored": chunks_stored,
         }
+
+    def list_documents(self) -> list[str]:
+        documents = []
+
+        for file_path in self.upload_dir.glob("*.pdf"):
+            documents.append(file_path.name)
+
+        return sorted(documents)
+
+    def delete_document(
+        self,
+        document_name: str,
+    ) -> None:
+        file_path = self._get_safe_path(
+            document_name
+        )
+
+        if not file_path.exists():
+            raise FileNotFoundError(
+                f"Document '{document_name}' not found."
+            )
+
+        self.vector_service.delete_document(
+            document_name
+        )
+
+        try:
+            file_path.unlink()
+        except Exception as exc:
+            raise RuntimeError(
+                "Document vectors were deleted, "
+                "but the PDF file could not be removed."
+            ) from exc
+
+    def _get_safe_path(
+        self,
+        filename: str,
+    ) -> Path:
+        upload_dir = self.upload_dir.resolve()
+        file_path = (upload_dir / filename).resolve()
+
+        if upload_dir not in file_path.parents:
+            raise ValueError(
+                "Invalid document path."
+            )
+
+        return file_path

@@ -106,3 +106,15 @@ class VectorService:
                 "distances",
             ],
         )
+    def list_documents(self) -> list[str]:
+        result = self.collection.get(
+            include=["metadatas"]
+        )
+
+        documents = set()
+
+        for metadata in result["metadatas"]:
+            if metadata and metadata.get("document"):
+                documents.add(metadata["document"])
+
+        return sorted(documents)
