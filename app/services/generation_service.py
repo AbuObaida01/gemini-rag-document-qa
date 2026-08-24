@@ -1,0 +1,65 @@
+from google import genai
+
+from app.config.settings import GEMINI_API_KEY
+
+
+GENERATION_MODEL = "gemini-3.6-flash"
+
+
+class GenerationService:
+    def __init__(self) -> None:
+        if not GEMINI_API_KEY:
+            raise ValueError(
+                "GEMINI_API_KEY is not configured."
+            )
+
+        self.client = genai.Client(
+            api_key=GEMINI_API_KEY
+        )
+
+    def generate_answer(
+        self,
+        question: str,
+        context: str,
+    ) -> str:
+        if not question.strip():
+            raise ValueError(
+                "Question cannot be empty."
+            )
+
+        if not context.strip():
+            raise ValueError(
+                "Context cannot be empty."
+            )
+
+        prompt = f"""
+You are a document question-answering assistant.
+
+Answer the user's question using ONLY the information
+provided in the context below.
+
+If the answer cannot be found in the context, say:
+"I could not find the answer in the provided documents."
+
+Do not use outside knowledge.
+Do not invent facts.
+Keep the answer clear and concise.
+
+Context:
+{context}
+
+Question:
+{question}
+"""
+
+        response = self.client.models.generate_content(
+            model=GENERATION_MODEL,
+            contents=prompt,
+        )
+
+        if not response.text:
+            raise ValueError(
+                "Gemini returned an empty response."
+            )
+
+        return response.text.strip()
