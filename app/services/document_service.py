@@ -5,6 +5,7 @@ from fastapi import UploadFile
 
 from app.config.settings import UPLOAD_DIR
 from app.services.chunk_service import ChunkService
+from app.services.embedding_service import EmbeddingService
 
 ALLOWED_CONTENT_TYPES = {
     "application/pdf",
@@ -16,6 +17,7 @@ class DocumentService:
         self.upload_dir = Path(UPLOAD_DIR)
         self.upload_dir.mkdir(parents=True, exist_ok=True)
         self.chunk_service = ChunkService()
+        self.embedding_service = EmbeddingService()
 
     def validate_file(self, file: UploadFile) -> None:
         if not file.filename:
@@ -94,6 +96,14 @@ class DocumentService:
             pages = self.extract_text(file_path)
 
             chunks = self.chunk_service.chunk_pages(pages)
+
+            for chunk in chunks:
+                chunk["embedding"] = (
+                    self.embedding_service.generate_embedding(
+                        chunk["text"]
+                    )
+                )
+                
 
         except Exception:
             file_path.unlink(missing_ok=True)
