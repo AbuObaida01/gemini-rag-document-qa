@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
 
+from app.schemas.query import QueryRequest, QueryResponse
 from app.services.query_service import QueryService
 
 
@@ -13,21 +13,10 @@ router = APIRouter(
 query_service = QueryService()
 
 
-class QueryRequest(BaseModel):
-    question: str
-
-class SourceResponse(BaseModel):
-    document: str
-    page: int
-    chunk: int
-    distance: float
-
-
-class QueryResponse(BaseModel):
-    answer: str
-    sources: list[SourceResponse]
-
-@router.post("/query")
+@router.post(
+    "/query",
+    response_model=QueryResponse,
+)
 async def query_documents(
     request: QueryRequest,
 ):

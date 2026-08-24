@@ -69,13 +69,13 @@ class RetrievalService:
         ):
             context_parts.append(
                 f"""
-    [Source {index}]
-    Document: {chunk['document']}
-    Page: {chunk['page']}
-    Chunk: {chunk['chunk']}
+[Source {index}]
+Document: {chunk['document']}
+Page: {chunk['page']}
+Chunk: {chunk['chunk']}
 
-    {chunk['text']}
-    """.strip()
+{chunk['text']}
+""".strip()
             )
 
         return "\n\n".join(context_parts)

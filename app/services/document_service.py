@@ -1,5 +1,5 @@
 from pathlib import Path
-
+import logging
 import pymupdf
 from fastapi import UploadFile
 
@@ -7,6 +7,8 @@ from app.config.settings import UPLOAD_DIR
 from app.services.chunk_service import ChunkService
 from app.services.embedding_service import EmbeddingService
 from app.services.vector_service import VectorService
+
+logger = logging.getLogger(__name__)
 
 ALLOWED_CONTENT_TYPES = {
     "application/pdf",

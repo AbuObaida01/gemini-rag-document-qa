@@ -1,18 +1,28 @@
 from fastapi import FastAPI
-from app.api.chat import router as chat_router
-from app.api.upload import router as upload_router
-from app.api.query import router as query_router
 
-app=FastAPI(
-    title="RAG Document QA System"
+from app.api.query import router as query_router
+from app.api.upload import router as document_router
+from app.core.logging_config import configure_logging
+
+
+configure_logging()
+
+
+app = FastAPI(
+    title="Gemini RAG API",
+    version="1.0.0",
 )
 
-app.include_router(upload_router)
-app.include_router(chat_router)
+
+app.include_router(document_router)
 app.include_router(query_router)
 
-@app.get("/")
-def root():
-    return{
-        "message":"Hello"
+
+@app.get(
+    "/health",
+    tags=["Health"],
+)
+async def health_check():
+    return {
+        "status": "ok"
     }

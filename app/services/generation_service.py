@@ -41,9 +41,11 @@ provided in the context below.
 If the answer cannot be found in the context, say:
 "I could not find the answer in the provided documents."
 
-Do not use outside knowledge.
-Do not invent facts.
-Keep the answer clear and concise.
+Rules:
+- Do not use outside knowledge.
+- Do not invent facts.
+- Do not make unsupported claims.
+- Keep the answer clear and concise.
 
 Context:
 {context}
@@ -57,13 +59,14 @@ Question:
                 model=GENERATION_MODEL,
                 contents=prompt,
             )
+
         except Exception as exc:
             raise RuntimeError(
                 "Failed to generate an answer with Gemini."
             ) from exc
 
         if not response.text:
-            raise ValueError(
+            raise RuntimeError(
                 "Gemini returned an empty response."
             )
 

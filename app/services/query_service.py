@@ -1,6 +1,11 @@
+import logging
+
 from app.config.settings import TOP_K
 from app.services.generation_service import GenerationService
 from app.services.retrieval_service import RetrievalService
+
+
+logger = logging.getLogger(__name__)
 
 
 class QueryService:
@@ -18,9 +23,19 @@ class QueryService:
                 "Question cannot be empty."
             )
 
+        logger.info(
+            "Processing query: %s",
+            question,
+        )
+
         chunks = self.retrieval_service.retrieve(
             question=question,
             top_k=top_k,
+        )
+
+        logger.info(
+            "Retrieved %s chunks for query",
+            len(chunks),
         )
 
         context = self.retrieval_service.build_context(
@@ -28,6 +43,10 @@ class QueryService:
         )
 
         if not context:
+            logger.info(
+                "No relevant context found for query"
+            )
+
             return {
                 "answer": (
                     "I could not find the answer "
@@ -36,9 +55,18 @@ class QueryService:
                 "sources": [],
             }
 
+        logger.info(
+            "Generating answer using %s chunks",
+            len(chunks),
+        )
+
         answer = self.generation_service.generate_answer(
             question=question,
             context=context,
+        )
+
+        logger.info(
+            "Answer generated successfully"
         )
 
         sources = []
@@ -49,6 +77,7 @@ class QueryService:
                     "document": chunk["document"],
                     "page": chunk["page"],
                     "chunk": chunk["chunk"],
+                    "distance": chunk["distance"],
                 }
             )
 
