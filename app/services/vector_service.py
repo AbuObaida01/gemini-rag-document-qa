@@ -65,3 +65,20 @@ class VectorService:
                 "document": document_name
             }
         )
+
+    def count(self) -> int:
+        return self.collection.count()
+
+    def get_document_chunks(
+        self,
+        document_name: str,
+    ) -> dict:
+        return self.collection.get(
+            where={
+                "document": document_name
+            },
+            include=[
+                "documents",
+                "metadatas",
+            ],
+        )
