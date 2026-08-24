@@ -1,6 +1,6 @@
 import chromadb
 
-from app.config.settings import CHROMA_DB_PATH
+from app.config.settings import CHROMA_DB_PATH, TOP_K
 
 
 COLLECTION_NAME = "document_chunks"
@@ -80,5 +80,29 @@ class VectorService:
             include=[
                 "documents",
                 "metadatas",
+            ],
+        )
+    def search(
+        self,
+        query_embedding: list[float],
+        top_k: int = TOP_K,
+    ) -> dict:
+        if not query_embedding:
+            raise ValueError(
+                "Query embedding cannot be empty."
+            )
+
+        if top_k <= 0:
+            raise ValueError(
+                "top_k must be greater than zero."
+            )
+
+        return self.collection.query(
+            query_embeddings=[query_embedding],
+            n_results=top_k,
+            include=[
+                "documents",
+                "metadatas",
+                "distances",
             ],
         )
