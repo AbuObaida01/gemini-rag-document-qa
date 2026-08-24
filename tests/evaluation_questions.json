@@ -1,0 +1,52 @@
+[
+    {
+        "question": "What is the objective of the project?",
+        "expected_answer": "The answer should describe the project's objective.",
+        "relevant": true
+    },
+    {
+        "question": "Which dataset was used in the project?",
+        "expected_answer": "The answer should identify the dataset used.",
+        "relevant": true
+    },
+    {
+        "question": "What machine learning model was used?",
+        "expected_answer": "The answer should identify the machine learning model.",
+        "relevant": true
+    },
+    {
+        "question": "What evaluation metrics were used?",
+        "expected_answer": "The answer should identify the evaluation metrics.",
+        "relevant": true
+    },
+    {
+        "question": "What factors influence medical insurance costs?",
+        "expected_answer": "The answer should describe the relevant factors.",
+        "relevant": true
+    },
+    {
+        "question": "What was the conclusion of the project?",
+        "expected_answer": "The answer should summarize the project's conclusion.",
+        "relevant": true
+    },
+    {
+        "question": "Who was the first president of India?",
+        "expected_answer": "",
+        "relevant": false
+    },
+    {
+        "question": "What is the capital of France?",
+        "expected_answer": "",
+        "relevant": false
+    },
+    {
+        "question": "Explain TCP three-way handshake.",
+        "expected_answer": "",
+        "relevant": false
+    },
+    {
+        "question": "What is the latest iPhone?",
+        "expected_answer": "",
+        "relevant": false
+    }
+]
