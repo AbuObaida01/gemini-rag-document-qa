@@ -6,6 +6,7 @@ from fastapi import UploadFile
 from app.config.settings import UPLOAD_DIR
 from app.services.chunk_service import ChunkService
 from app.services.embedding_service import EmbeddingService
+from app.services.vector_service import VectorService
 
 ALLOWED_CONTENT_TYPES = {
     "application/pdf",
@@ -18,6 +19,7 @@ class DocumentService:
         self.upload_dir.mkdir(parents=True, exist_ok=True)
         self.chunk_service = ChunkService()
         self.embedding_service = EmbeddingService()
+        self.vector_service = VectorService()
 
     def validate_file(self, file: UploadFile) -> None:
         if not file.filename:
@@ -103,7 +105,11 @@ class DocumentService:
                         chunk["text"]
                     )
                 )
-                
+
+            chunks_stored = self.vector_service.add_chunks(
+                document_name=filename,
+                chunks=chunks,
+            )
 
         except Exception:
             file_path.unlink(missing_ok=True)
@@ -113,4 +119,5 @@ class DocumentService:
             "file_path": file_path,
             "pages": pages,
             "chunks": chunks,
+            "chunks_stored": chunks_stored,
         }
