@@ -29,12 +29,28 @@ async def upload_document(
             file
         )
 
+        metadata = result.get(
+            "metadata",
+            {},
+        )
+
         return {
             "message": "Document processed successfully",
             "document": file.filename,
-            "pages_extracted": len(result["pages"]),
-            "chunks_created": len(result["chunks"]),
-            "chunks_stored": result["chunks_stored"],
+            "file_type": metadata.get(
+                "file_type",
+                "unknown",
+            ),
+            "extraction_method": metadata.get(
+                "extraction_method",
+                "text",
+            ),
+            "chunks_created": len(
+                result["chunks"]
+            ),
+            "chunks_stored": result[
+                "chunks_stored"
+            ],
         }
 
     except ValueError as exc:
@@ -53,8 +69,7 @@ async def upload_document(
         raise HTTPException(
             status_code=500,
             detail=str(exc),
-        ) from exc
-
+        ) from exc   
 
 @router.get(
     "",

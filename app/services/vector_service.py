@@ -7,13 +7,16 @@ COLLECTION_NAME = "document_chunks"
 
 
 class VectorService:
+
     def __init__(self) -> None:
         self.client = chromadb.PersistentClient(
             path=CHROMA_DB_PATH
         )
 
-        self.collection = self.client.get_or_create_collection(
-            name=COLLECTION_NAME
+        self.collection = (
+            self.client.get_or_create_collection(
+                name=COLLECTION_NAME
+            )
         )
 
     def add_chunks(
@@ -39,13 +42,28 @@ class VectorService:
             documents.append(chunk["text"])
             embeddings.append(chunk["embedding"])
 
-            metadatas.append(
-                {
-                    "document": document_name,
-                    "page": chunk["page"],
-                    "chunk": chunk["chunk"],
-                }
+            metadata = {
+                "document": document_name,
+                "chunk": chunk["chunk"],
+            }
+
+            # Preserve extractor metadata.
+            chunk_metadata = chunk.get(
+                "metadata",
+                {},
             )
+
+            if chunk_metadata:
+                metadata.update(
+                    chunk_metadata
+                )
+
+            # Preserve PDF page information
+            # when it exists.
+            if "page" in chunk:
+                metadata["page"] = chunk["page"]
+
+            metadatas.append(metadata)
 
         self.collection.add(
             ids=ids,
@@ -92,7 +110,9 @@ class VectorService:
 
         for metadata in result["metadatas"]:
             if metadata and metadata.get("document"):
-                documents.add(metadata["document"])
+                documents.add(
+                    metadata["document"]
+                )
 
         return sorted(documents)
 

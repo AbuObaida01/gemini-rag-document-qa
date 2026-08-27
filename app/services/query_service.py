@@ -72,14 +72,24 @@ class QueryService:
         sources = []
 
         for chunk in chunks:
-            sources.append(
-                {
-                    "document": chunk["document"],
-                    "page": chunk["page"],
-                    "chunk": chunk["chunk"],
-                    "distance": chunk["distance"],
-                }
-            )
+            source = {
+                "document": chunk["document"],
+                "chunk": chunk["chunk"],
+                "distance": chunk["distance"],
+            }
+
+            if "page" in chunk:
+                source["page"] = chunk["page"]
+
+            if "file_type" in chunk:
+                source["file_type"] = chunk["file_type"]
+
+            if "extraction_method" in chunk:
+                source["extraction_method"] = (
+                    chunk["extraction_method"]
+                )
+
+            sources.append(source)
 
         return {
             "answer": answer,

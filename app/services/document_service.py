@@ -1,45 +1,55 @@
 from pathlib import Path
 import logging
-import pymupdf
+
 from fastapi import UploadFile
 
 from app.config.settings import UPLOAD_DIR
 from app.services.chunk_service import ChunkService
 from app.services.embedding_service import EmbeddingService
 from app.services.vector_service import VectorService
+from app.services.extraction.extractor_factory import ExtractorFactory
+
 
 logger = logging.getLogger(__name__)
 
-ALLOWED_CONTENT_TYPES = {
-    "application/pdf",
-}
-
 
 class DocumentService:
+
     def __init__(self) -> None:
         self.upload_dir = Path(UPLOAD_DIR)
-        self.upload_dir.mkdir(parents=True, exist_ok=True)
+        self.upload_dir.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
         self.chunk_service = ChunkService()
         self.embedding_service = EmbeddingService()
         self.vector_service = VectorService()
+        self.extractor_factory = ExtractorFactory()
 
-    def validate_file(self, file: UploadFile) -> None:
+    def validate_file(
+        self,
+        file: UploadFile,
+    ) -> None:
         if not file.filename:
             raise ValueError(
                 "Filename is missing."
             )
 
-        if not file.filename.lower().endswith(".pdf"):
-            raise ValueError(
-                "Only PDF files are supported."
+        try:
+            self.extractor_factory.get_extractor(
+                Path(file.filename)
             )
-
-        if file.content_type != "application/pdf":
+        except ValueError as exc:
             raise ValueError(
-                "Only PDF files are supported."
-            )
+                f"Unsupported file format: "
+                f"{Path(file.filename).suffix.lower()}"
+            ) from exc
 
-    def check_duplicate(self, filename: str) -> None:
+    def check_duplicate(
+        self,
+        filename: str,
+    ) -> None:
         file_path = self.upload_dir / filename
 
         if file_path.exists():
@@ -47,56 +57,59 @@ class DocumentService:
                 f"Document '{filename}' already exists."
             )
 
-    async def save_file(self, file: UploadFile) -> Path:
+    async def save_file(
+        self,
+        file: UploadFile,
+    ) -> Path:
         file_path = self.upload_dir / file.filename
 
         content = await file.read()
 
         if not content:
-            raise ValueError("Uploaded file is empty.")
+            raise ValueError(
+                "Uploaded file is empty."
+            )
 
         file_path.write_bytes(content)
 
         return file_path
 
-    def extract_text(self, file_path: Path) -> list[dict]:
-        pages = []
+    def extract_text(
+        self,
+        file_path: Path,
+    ) -> dict:
+        """
+        Extract text from the uploaded file
+        using the appropriate extractor.
+        """
 
         try:
-            document = pymupdf.open(file_path)
+            result = self.extractor_factory.extract(
+                file_path
+            )
         except Exception as exc:
-            raise ValueError(
-                "The uploaded file is not a valid PDF."
-            ) from exc
-
-        try:
-            if len(document) == 0:
-                raise ValueError(
-                    "The uploaded PDF contains no pages."
-                )
-
-            for page_number, page in enumerate(document, start=1):
-                text = page.get_text("text").strip()
-
-                if text:
-                    pages.append(
-                        {
-                            "page": page_number,
-                            "text": text,
-                        }
-                    )
-
-        finally:
-            document.close()
-
-        if not pages:
-            raise ValueError(
-                "The uploaded PDF contains no extractable text."
+            logger.exception(
+                "Failed to extract text from %s",
+                file_path.name,
             )
 
-        return pages
+            raise ValueError(
+                f"Failed to extract text from "
+                f"'{file_path.name}'."
+            ) from exc
 
-    async def process_upload(self, file: UploadFile) -> dict:
+        if not result.get("text", "").strip():
+            raise ValueError(
+                f"No extractable text found in "
+                f"'{file_path.name}'."
+            )
+
+        return result
+
+    async def process_upload(
+        self,
+        file: UploadFile,
+    ) -> dict:
         self.validate_file(file)
 
         filename = file.filename
@@ -106,9 +119,34 @@ class DocumentService:
         file_path = await self.save_file(file)
 
         try:
-            pages = self.extract_text(file_path)
+            extraction_result = self.extract_text(
+                file_path
+            )
 
-            chunks = self.chunk_service.chunk_pages(pages)
+            if extraction_result.get("pages"):
+                chunks = self.chunk_service.chunk_pages(
+                    extraction_result["pages"]
+                )
+
+                document_metadata = extraction_result.get(
+                    "metadata",
+                    {},
+                )
+
+                for chunk in chunks:
+                    chunk["metadata"] = {
+                        **document_metadata,
+                        **chunk.get("metadata", {}),
+                    }
+
+            else:
+                chunks = self.chunk_service.chunk_text(
+                    text=extraction_result["text"],
+                    metadata=extraction_result.get(
+                        "metadata",
+                        {},
+                    ),
+                )
 
             for chunk in chunks:
                 chunk["embedding"] = (
@@ -117,27 +155,44 @@ class DocumentService:
                     )
                 )
 
-            chunks_stored = self.vector_service.add_chunks(
-                document_name=filename,
-                chunks=chunks,
+            chunks_stored = (
+                self.vector_service.add_chunks(
+                    document_name=filename,
+                    chunks=chunks,
+                )
             )
 
         except Exception:
-            file_path.unlink(missing_ok=True)
+            file_path.unlink(
+                missing_ok=True
+            )
             raise
 
         return {
             "file_path": file_path,
-            "pages": pages,
+            "text": extraction_result["text"],
+            "metadata": extraction_result.get(
+                "metadata",
+                {},
+            ),
             "chunks": chunks,
             "chunks_stored": chunks_stored,
         }
-
+    
     def list_documents(self) -> list[str]:
         documents = []
 
-        for file_path in self.upload_dir.glob("*.pdf"):
-            documents.append(file_path.name)
+        for file_path in self.upload_dir.iterdir():
+            if file_path.is_file():
+                try:
+                    self.extractor_factory.get_extractor(
+                        file_path
+                    )
+                    documents.append(
+                        file_path.name
+                    )
+                except ValueError:
+                    continue
 
         return sorted(documents)
 
@@ -163,15 +218,21 @@ class DocumentService:
         except Exception as exc:
             raise RuntimeError(
                 "Document vectors were deleted, "
-                "but the PDF file could not be removed."
+                "but the document file could not "
+                "be removed."
             ) from exc
 
     def _get_safe_path(
         self,
         filename: str,
     ) -> Path:
-        upload_dir = self.upload_dir.resolve()
-        file_path = (upload_dir / filename).resolve()
+        upload_dir = (
+            self.upload_dir.resolve()
+        )
+
+        file_path = (
+            upload_dir / filename
+        ).resolve()
 
         if upload_dir not in file_path.parents:
             raise ValueError(

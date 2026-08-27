@@ -7,6 +7,7 @@ from app.services.vector_service import VectorService
 
 
 class RetrievalService:
+
     def __init__(self) -> None:
         self.embedding_service = EmbeddingService()
         self.vector_service = VectorService()
@@ -16,6 +17,7 @@ class RetrievalService:
         question: str,
         top_k: int = TOP_K,
     ) -> list[dict]:
+
         if not question.strip():
             raise ValueError(
                 "Question cannot be empty."
@@ -42,15 +44,31 @@ class RetrievalService:
             if distance > DISTANCE_THRESHOLD:
                 continue
 
-            retrieved_chunks.append(
-                {
-                    "text": document,
-                    "document": metadata["document"],
-                    "page": metadata["page"],
-                    "chunk": metadata["chunk"],
-                    "distance": distance,
-                }
-            )
+            chunk = {
+                "text": document,
+                "document": metadata["document"],
+                "chunk": metadata["chunk"],
+                "distance": distance,
+            }
+
+            # Page exists for page-based documents
+            # such as PDFs.
+            if "page" in metadata:
+                chunk["page"] = metadata["page"]
+
+            # Preserve additional metadata such as
+            # file type and OCR extraction method.
+            if "file_type" in metadata:
+                chunk["file_type"] = metadata[
+                    "file_type"
+                ]
+
+            if "extraction_method" in metadata:
+                chunk["extraction_method"] = metadata[
+                    "extraction_method"
+                ]
+
+            retrieved_chunks.append(chunk)
 
         return retrieved_chunks
 
@@ -58,6 +76,7 @@ class RetrievalService:
         self,
         chunks: list[dict],
     ) -> str:
+
         if not chunks:
             return ""
 
@@ -67,15 +86,26 @@ class RetrievalService:
             chunks,
             start=1,
         ):
-            context_parts.append(
-                f"""
-[Source {index}]
-Document: {chunk['document']}
-Page: {chunk['page']}
-Chunk: {chunk['chunk']}
+            source_info = (
+                f"[Source {index}]\n"
+                f"Document: {chunk['document']}\n"
+            )
 
-{chunk['text']}
-""".strip()
+            if "page" in chunk:
+                source_info += (
+                    f"Page: {chunk['page']}\n"
+                )
+
+            source_info += (
+                f"Chunk: {chunk['chunk']}\n"
+            )
+
+            context_parts.append(
+                (
+                    source_info
+                    + "\n"
+                    + chunk["text"]
+                ).strip()
             )
 
         return "\n\n".join(context_parts)

@@ -11,9 +11,11 @@ class QueryRequest(BaseModel):
 
 class SourceResponse(BaseModel):
     document: str
-    page: int
+    page: int | None = None
     chunk: int
     distance: float
+    file_type: str | None = None
+    extraction_method: str | None = None
 
 
 class QueryResponse(BaseModel):

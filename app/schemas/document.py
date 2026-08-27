@@ -4,7 +4,8 @@ from pydantic import BaseModel
 class DocumentUploadResponse(BaseModel):
     message: str
     document: str
-    pages_extracted: int
+    file_type: str
+    extraction_method: str
     chunks_created: int
     chunks_stored: int
 

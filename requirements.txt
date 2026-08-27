@@ -5,3 +5,10 @@ python-multipart
 pymupdf
 google-genai
 chromadb
+python-docx
+pandas
+openpyxl
+python-pptx
+beautifulsoup4
+pytesseract
+Pillow
