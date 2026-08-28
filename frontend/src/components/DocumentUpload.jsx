@@ -1,6 +1,27 @@
 import { useState } from "react";
 import { uploadDocument } from "../services/api";
 
+const ALLOWED_EXTENSIONS = [
+  ".pdf",
+  ".txt",
+  ".md",
+  ".docx",
+  ".csv",
+  ".xlsx",
+  ".pptx",
+  ".html",
+  ".htm",
+  ".json",
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".webp",
+  ".tif",
+  ".tiff",
+];
+
+const ACCEPTED_FILES = ALLOWED_EXTENSIONS.join(",");
+
 function DocumentUpload({ onUploadSuccess }) {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -18,10 +39,14 @@ function DocumentUpload({ onUploadSuccess }) {
       return;
     }
 
-    if (
-      selectedFile.type !== "application/pdf"
-    ) {
-      setError("Only PDF files are allowed.");
+    const extension = (
+      "." + selectedFile.name.split(".").pop()
+    ).toLowerCase();
+
+    if (!ALLOWED_EXTENSIONS.includes(extension)) {
+      setError(
+        "Unsupported file format. Please select a supported document or image."
+      );
       setFile(null);
       return;
     }
@@ -31,7 +56,7 @@ function DocumentUpload({ onUploadSuccess }) {
 
   const handleUpload = async () => {
     if (!file) {
-      setError("Please select a PDF file.");
+      setError("Please select a file.");
       return;
     }
 
@@ -44,14 +69,13 @@ function DocumentUpload({ onUploadSuccess }) {
 
       setSuccess(
         `${result.document} uploaded successfully. ` +
-        `${result.pages_extracted} pages and ` +
         `${result.chunks_created} chunks processed.`
       );
 
       setFile(null);
 
       document.getElementById(
-        "pdf-file-input"
+        "document-file-input"
       ).value = "";
 
       if (onUploadSuccess) {
@@ -73,9 +97,9 @@ function DocumentUpload({ onUploadSuccess }) {
       <h2>Upload Document</h2>
 
       <input
-        id="pdf-file-input"
+        id="document-file-input"
         type="file"
-        accept=".pdf,application/pdf"
+        accept={ACCEPTED_FILES}
         onChange={handleFileChange}
         disabled={loading}
       />
@@ -91,8 +115,8 @@ function DocumentUpload({ onUploadSuccess }) {
         disabled={!file || loading}
       >
         {loading
-          ? "Processing document..."
-          : "Upload PDF"}
+          ? "Processing..."
+          : "Upload File"}
       </button>
 
       {success && (
